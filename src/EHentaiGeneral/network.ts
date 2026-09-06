@@ -89,19 +89,6 @@ export class MainInterceptor extends PaperbackInterceptor {
     if (request.url.includes(`${BASE_URL}/g/`) && response.status === 404) {
       throw new Error("This Content is no More Available");
     }
-    if (request.headers) {
-      Object.entries(request.headers).forEach(([nome, valore]) => {
-        debugPrint(`[Request] header ${nome} detected (length: ${valore.length})`);
-      });
-    }
-    if (request.cookies) {
-      Object.entries(request.cookies).forEach(([chiave, valore]) => {
-        debugPrint(`[Request] cookie ${chiave} detected (length: ${valore.length})`);
-      });
-    }
-    debugPrint(
-      `[Request] Request to ${request.url}, m:${request.method} s:${response.status} bl:${data.byteLength}`,
-    );
     if (request.cookies) {
       Object.entries(request.cookies).forEach(([chiave, valore]) => {
         if (chiave === "igneous" && valore.toLowerCase() === "mystery") {

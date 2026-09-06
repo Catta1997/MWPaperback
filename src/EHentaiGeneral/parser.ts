@@ -21,7 +21,7 @@ import {
   type SearchMetadata,
   tableFix,
 } from "./utils";
-import { BASE_URL, loginManager, network } from "./main";
+import { BASE_URL, network } from "./main";
 import type { GalleryInfo, MangaElement } from "./models";
 
 export class Parser {
@@ -577,24 +577,28 @@ export class Parser {
     };
   }
 
+  async getThumbnailNumber(chapter: Chapter): Promise<number> {
+    const html = await Application.scheduleRequest({
+      url: `${BASE_URL}/g/${chapter.chapterId}`,
+      method: "GET",
+    });
+    const $ = cheerio.load(Application.arrayBufferToUTF8String(html[1]));
+    return $("#gdt a").length;
+  }
+
   async scrapeAllChapterPagesList(chapter: Chapter) {
     const totalImages = Number(chapter?.additionalInfo?.pages ?? "0");
-    debugPrint(`[Parser] Chapter has ${totalImages} pages`, {
+    const imagesPerPage = await this.getThumbnailNumber(chapter);
+    debugPrint(`[Parser] Chapter has ${imagesPerPage} thumbnails per page`, {
       chapterId: chapter.chapterId,
       additionalInfo: chapter.additionalInfo,
     });
     if (totalImages === 0) return [];
-    let imagesPerPage = 20;
     let totalPages = Math.ceil(totalImages / imagesPerPage);
-    if (loginManager.isLoggedIn() && totalPages > 3) {
-      await Application.scheduleRequest({
-        url: `${BASE_URL}/g/${chapter.chapterId}?inline_set=ts_100`,
-        method: "GET",
-      });
-      imagesPerPage = 40;
-      totalPages = Math.ceil(totalImages / imagesPerPage);
-      debugPrint(`[Parser] Changed to 40 items per page`);
-    }
+    debugPrint(`[Parser] Chapter has ${totalImages} images and ${totalPages} pages`, {
+      chapterId: chapter.chapterId,
+      additionalInfo: chapter.additionalInfo,
+    });
     const pagePromises = Array.from({ length: totalPages }, async (_, page) => {
       const url = `${BASE_URL}/g/${chapter.chapterId}?p=${page}`;
       const html = await network.getChapterPages(url);
